@@ -26,10 +26,11 @@ public class EntryPoint extends Application {
         /*
 		 * Create and set the model here!
 		 */
-		// controller.setModel();
+		
+        controller.setModel();
         
         
-        stage.setTitle("JavaFX and Maven");
+        stage.setTitle("Lab04");
         stage.setScene(scene);
         stage.show();
     }

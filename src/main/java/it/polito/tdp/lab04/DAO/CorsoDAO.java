@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -34,45 +35,109 @@ public class CorsoDAO {
 				String nome = rs.getString("nome");
 				int periodoDidattico = rs.getInt("pd");
 
-				System.out.println(codins + " " + numeroCrediti + " " + nome + " " + periodoDidattico);
+				//System.out.println(codins + " " + numeroCrediti + " " + nome + " " + periodoDidattico);
 
 				// Crea un nuovo JAVA Bean Corso
 				// Aggiungi il nuovo oggetto Corso alla lista corsi
+				corsi.add(new Corso(codins, numeroCrediti, nome, periodoDidattico));
 			}
 
 			conn.close();
 			
 			return corsi;
 			
-
 		} catch (SQLException e) {
 			// e.printStackTrace();
 			throw new RuntimeException("Errore Db", e);
 		}
 	}
 	
-	
-	/*
-	 * Dato un codice insegnamento, ottengo il corso
-	 */
-	public void getCorso(Corso corso) {
-		// TODO
-	}
 
 	/*
 	 * Ottengo tutti gli studenti iscritti al Corso
 	 */
-	public void getStudentiIscrittiAlCorso(Corso corso) {
-		// TODO
+	public List<Studente> getStudentiIscrittiAlCorso(Corso corso) {
+
+		String sql = "SELECT s.matricola, s.cognome, s.nome, s.CDS "
+				+ "FROM studente s, iscrizione i "
+				+ "WHERE s.matricola = i.matricola and i.codins = ?";
+			
+		try {
+			Connection conn = ConnectDB.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			
+			st.setString(1, corso.getCodins());
+			
+			ResultSet rs = st.executeQuery();
+			
+			List<Studente> result = new ArrayList<Studente>();
+			
+			while(rs.next()) {
+				
+				Studente s = new Studente(rs.getInt("matricola"), rs.getString("cognome"), rs.getString("nome"), rs.getString("CDS"));
+				
+				result.add(s);
+				
+			}
+			
+			rs.close();
+			st.close();
+			conn.close();
+			
+			return result;
+			
+		} catch (SQLException e) {
+			System.out.println("ERRORE nel getStudentiIscrittiAlCorso(Corso corso)");
+			
+			e.printStackTrace();
+			return null;
+		}
+		
 	}
 
 	/*
 	 * Data una matricola ed il codice insegnamento, iscrivi lo studente al corso.
 	 */
-	public boolean inscriviStudenteACorso(Studente studente, Corso corso) {
+	public boolean iscriviStudenteACorso(Studente studente, Corso corso) {
 		// TODO
 		// ritorna true se l'iscrizione e' avvenuta con successo
-		return false;
+		
+		for(Studente s : this.getStudentiIscrittiAlCorso(corso)) {
+			
+			if(s.equals(studente)) {
+				return false;
+			}
+			
+		}
+		
+		this.iscriviStudente(studente, corso);
+		
+		return true;
+		
 	}
+	
+	public void iscriviStudente(Studente studente, Corso corso) {
+
+		String sql = "INSERT INTO iscrizione (`matricola`, `codins`) "
+		+"VALUES (?, ?);" ;
+
+		try {
+			Connection conn = ConnectDB.getConnection() ;
+			PreparedStatement st = conn.prepareStatement(sql) ;
+
+			st.setInt(1, studente.getMatricola());
+			st.setString(2, corso.getCodins());
+
+			st.executeUpdate();
+			
+			st.close();
+			conn.close();
+			
+		} catch (SQLException e) {
+			System.out.println("Impossibile iscrivere nel DB");
+			e.printStackTrace();
+		}
+	}
+
 
 }
